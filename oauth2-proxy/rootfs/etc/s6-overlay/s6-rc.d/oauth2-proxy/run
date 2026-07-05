@@ -1,0 +1,60 @@
+#!/usr/bin/with-contenv bashio
+
+set -euo pipefail
+
+bashio::log.info "Configuring environment variables..."
+
+# Require mandatory parameters
+bashio::config.require 'client_id'
+bashio::config.require 'client_secret'
+bashio::config.require 'oidc_issuer_url'
+bashio::config.require 'cookie_secret'
+bashio::config.require 'upstreams'
+bashio::config.require 'provider'
+bashio::config.require 'scope'
+bashio::config.require 'email_domains'
+bashio::config.require 'http_address'
+
+# SSL Configuration
+if bashio::config.true? 'ssl'; then
+    bashio::config.require 'cert_file'
+    bashio::config.require 'key_file'
+    export OAUTH2_PROXY_TLS_CERT_FILE="/ssl/$(bashio::config 'cert_file')"
+    export OAUTH2_PROXY_TLS_KEY_FILE="/ssl/$(bashio::config 'key_file')"
+fi
+
+# Basic & Provider Configuration
+export OAUTH2_PROXY_CLIENT_ID=$(bashio::config 'client_id')
+export OAUTH2_PROXY_CLIENT_SECRET=$(bashio::config 'client_secret')
+export OAUTH2_PROXY_OIDC_ISSUER_URL=$(bashio::config 'oidc_issuer_url')
+export OAUTH2_PROXY_COOKIE_SECRET=$(bashio::config 'cookie_secret')
+export OAUTH2_PROXY_UPSTREAMS=$(bashio::config 'upstreams')
+export OAUTH2_PROXY_PROVIDER=$(bashio::config 'provider')
+export OAUTH2_PROXY_SCOPE=$(bashio::config 'scope')
+export OAUTH2_PROXY_EMAIL_DOMAINS=$(bashio::config 'email_domains')
+export OAUTH2_PROXY_HTTP_ADDRESS=$(bashio::config 'http_address')
+
+# Boolean Flags
+if bashio::config.true? 'reverse_proxy'; then
+    export OAUTH2_PROXY_REVERSE_PROXY="true"
+fi
+if bashio::config.true? 'insecure_oidc_allow_unverified_email'; then
+    export OAUTH2_PROXY_INSECURE_OIDC_ALLOW_UNVERIFIED_EMAIL="true"
+fi
+if bashio::config.true? 'cookie_secure'; then
+    export OAUTH2_PROXY_COOKIE_SECURE="true"
+fi
+if bashio::config.true? 'skip_provider_button'; then
+    export OAUTH2_PROXY_SKIP_PROVIDER_BUTTON="true"
+fi
+
+# Optional parameters
+if bashio::config.has_value 'auth_url'; then
+    export OAUTH2_PROXY_REDIRECT_URL=$(bashio::config 'auth_url')
+fi
+if bashio::config.has_value 'cookie_name'; then
+    export OAUTH2_PROXY_COOKIE_NAME=$(bashio::config 'cookie_name')
+fi
+
+bashio::log.info "Starting Oauth2 Proxy..."
+exec /usr/bin/bootstrap
