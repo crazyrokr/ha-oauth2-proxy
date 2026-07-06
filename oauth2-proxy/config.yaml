@@ -50,3 +50,4 @@ schema:
   cookie_name: str?
 ports:
   4180/tcp: 4180
+image: "ghcr.io/crazyrokr/ha-oauth2-proxy"
